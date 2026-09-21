@@ -94,3 +94,6 @@ HELP.md
 
 ### local media adapter scratch ###
 .media/
+
+### internal docs, not for the public repo ###
+docs/

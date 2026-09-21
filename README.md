@@ -10,8 +10,6 @@ reusable integration building blocks.
 
 > Java 21 · Spring Boot · PostgreSQL · Kafka · AWS S3 · n8n · Docker
 
-See **[docs/ROADMAP.md](docs/ROADMAP.md)** for the architecture and the build plan.
-
 ## Status
 
 | Branch | What is on it |
