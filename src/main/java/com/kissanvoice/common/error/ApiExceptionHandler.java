@@ -55,6 +55,11 @@ public class ApiExceptionHandler {
                 "The audio file exceeds the configured maximum size.", "upload-too-large");
     }
 
+    @ExceptionHandler(PayloadTooLargeException.class)
+    ProblemDetail onPayloadTooLarge(PayloadTooLargeException ex) {
+        return problem(HttpStatus.PAYLOAD_TOO_LARGE, "Upload too large", ex.getMessage(), "upload-too-large");
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     ProblemDetail onIllegalArgument(IllegalArgumentException ex) {
         return problem(HttpStatus.BAD_REQUEST, "Invalid request", ex.getMessage(), "invalid-request");

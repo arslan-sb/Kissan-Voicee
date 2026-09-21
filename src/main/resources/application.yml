@@ -56,16 +56,26 @@ kissanvoice:
     ttl-hours: 24
     issuer: kissan-voice-api
   media:
-    provider: local          # Block 3 flips this to s3
+    # local: writes under ./.media, no AWS setup needed - the default so
+    #        tests and a bare `mvn spring-boot:run` never need LocalStack up.
+    # s3:    S3MediaStorage against the LocalStack container in
+    #        infra/docker-compose.yml. Switch with
+    #        `--kissanvoice.media.provider=s3` or the `s3` profile below.
+    provider: local
     local-root: ./.media
     bucket: kissan-voice-media
-    s3-endpoint: http://localhost:4566   # LocalStack
+    s3-endpoint: http://localhost:4566   # LocalStack; blank/unset targets real AWS
     region: eu-central-1
+    presign-ttl-minutes: 15
   crm:
     base-url: http://localhost:8081      # WireMock stand-in
   n8n:
     milestone-webhook: http://localhost:5678/webhook/contributor-milestone
     milestone-threshold: 25
+  outbox:
+    poll-interval-ms: 500
+    batch-size: 100
+    send-timeout-ms: 5000
 
 logging:
   level:

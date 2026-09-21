@@ -1,0 +1,6 @@
+# Activate with --spring.profiles.active=s3 (or SPRING_PROFILES_ACTIVE=s3)
+# once infra/docker-compose.yml's localstack container is up. Everything else
+# in application.yml (bucket, endpoint, region) already targets LocalStack.
+kissanvoice:
+  media:
+    provider: s3

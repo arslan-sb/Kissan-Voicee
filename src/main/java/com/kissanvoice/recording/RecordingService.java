@@ -3,9 +3,14 @@ package com.kissanvoice.recording;
 import com.kissanvoice.common.error.ConflictException;
 import com.kissanvoice.common.error.ForbiddenException;
 import com.kissanvoice.common.error.NotFoundException;
+import com.kissanvoice.common.error.PayloadTooLargeException;
 import com.kissanvoice.corpus.CorpusService;
 import com.kissanvoice.corpus.domain.Question;
 import com.kissanvoice.media.MediaStoragePort;
+import com.kissanvoice.outbox.AggregateType;
+import com.kissanvoice.outbox.OutboxWriter;
+import com.kissanvoice.outbox.events.RecordingCapturedData;
+import com.kissanvoice.outbox.events.RecordingDeletedData;
 import com.kissanvoice.recording.domain.Recording;
 import com.kissanvoice.recording.domain.RecordingSession;
 import com.kissanvoice.recording.domain.RecordingStatus;
@@ -28,19 +33,30 @@ public class RecordingService {
             "audio/webm", "audio/ogg", "audio/mpeg", "audio/mp4",
             "audio/wav", "audio/x-wav", "audio/x-m4a", "audio/aac");
 
+    /**
+     * Belt-and-braces alongside the servlet multipart limit (application.yml):
+     * that one rejects at the container before this method even runs, but it
+     * depends on multipart infrastructure being present, which this business
+     * rule does not.
+     */
+    private static final long MAX_AUDIO_BYTES = 10L * 1024 * 1024;
+
     private final RecordingRepository recordings;
     private final RecordingSessionRepository sessions;
     private final CorpusService corpus;
     private final MediaStoragePort media;
+    private final OutboxWriter outbox;
 
     public RecordingService(RecordingRepository recordings,
                             RecordingSessionRepository sessions,
                             CorpusService corpus,
-                            MediaStoragePort media) {
+                            MediaStoragePort media,
+                            OutboxWriter outbox) {
         this.recordings = recordings;
         this.sessions = sessions;
         this.corpus = corpus;
         this.media = media;
+        this.outbox = outbox;
     }
 
     @Transactional
@@ -55,6 +71,10 @@ public class RecordingService {
         if (!ALLOWED_TYPES.contains(contentType)) {
             throw new IllegalArgumentException(
                     "Unsupported audio type '" + contentType + "'. Allowed: " + ALLOWED_TYPES);
+        }
+        if (audio.getSize() > MAX_AUDIO_BYTES) {
+            throw new PayloadTooLargeException(
+                    "Audio file is " + audio.getSize() + " bytes; the maximum is " + MAX_AUDIO_BYTES + ".");
         }
 
         Question question = corpus.require(questionId);
@@ -84,12 +104,21 @@ public class RecordingService {
                 key, contentType, audio.getSize(), durationMs);
         recording.setId(recordingId);
 
+        Recording saved;
         try {
-            return recordings.saveAndFlush(recording);
+            saved = recordings.saveAndFlush(recording);
         } catch (DataIntegrityViolationException ex) {
             // uq_recording_answer fired: another request won the race.
             throw new ConflictException("This contributor has already answered question " + questionId);
         }
+
+        // Written in the same transaction as the row above: either both commit
+        // or neither does, so the Kafka message can never be lost to a crash
+        // between the DB write and a direct publish.
+        outbox.append(AggregateType.RECORDING, saved.getId(), "RecordingCaptured",
+                new RecordingCapturedData(saved.getId(), contributorId, question.getId(),
+                        question.getCategory(), saved.getMediaKey(), durationMs));
+        return saved;
     }
 
     /**
@@ -109,7 +138,10 @@ public class RecordingService {
             throw new ConflictException("Recording " + recordingId + " is already " + recording.getStatus());
         }
         recording.withdraw();
-        return recordings.save(recording);
+        Recording saved = recordings.save(recording);
+        outbox.append(AggregateType.RECORDING, saved.getId(), "RecordingDeleted",
+                new RecordingDeletedData(saved.getId(), contributorId, saved.getQuestionId()));
+        return saved;
     }
 
     /** Most recent accepted recording - what the prototype's "undo" button acted on. */
