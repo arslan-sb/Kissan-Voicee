@@ -1,5 +1,7 @@
 # Kissan Voice Platform
 
+[![CI](https://github.com/arslan-sb/Kissan-Voicee/actions/workflows/ci.yml/badge.svg?branch=kissan-voice-platform)](https://github.com/arslan-sb/Kissan-Voicee/actions/workflows/ci.yml)
+
 An event-driven backend for collecting a spoken-Urdu agricultural corpus:
 field contributors are served questions, record answers on a phone, and the
 platform stores the media, tracks corpus coverage, and **syncs contributor

@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main, kissan-voice-platform]
+  pull_request:
+    branches: [main, kissan-voice-platform]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # ubuntu-latest ships Docker pre-installed, which is all Testcontainers
+      # needs (Postgres + Kafka) for the integration tests in src/test.
+      - name: Build and test
+        run: ./mvnw -B verify

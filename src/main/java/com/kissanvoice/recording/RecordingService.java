@@ -120,7 +120,13 @@ public class RecordingService {
         // Written in the same transaction as the row above: either both commit
         // or neither does, so the Kafka message can never be lost to a crash
         // between the DB write and a direct publish.
-        outbox.append(AggregateType.RECORDING, saved.getId(), "RecordingCaptured",
+        //
+        // aggregateId is contributorId, not the recording's own id: per
+        // docs/ROADMAP.md §7 this is the Kafka partition key
+        // (OutboxPublisher), and per-contributor ordering is the guarantee
+        // that matters here, not per-recording ordering. The recording's own
+        // id still travels in the event payload (data.recordingId).
+        outbox.append(AggregateType.RECORDING, contributorId, "RecordingCaptured",
                 new RecordingCapturedData(saved.getId(), contributorId, question.getId(),
                         question.getCategory(), saved.getMediaKey(), durationMs));
 
@@ -155,7 +161,7 @@ public class RecordingService {
         }
         recording.withdraw();
         Recording saved = recordings.save(recording);
-        outbox.append(AggregateType.RECORDING, saved.getId(), "RecordingDeleted",
+        outbox.append(AggregateType.RECORDING, contributorId, "RecordingDeleted",
                 new RecordingDeletedData(saved.getId(), contributorId, saved.getQuestionId()));
         return saved;
     }
