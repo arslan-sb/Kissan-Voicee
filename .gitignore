@@ -51,3 +51,8 @@ __pycache__/
 venv/
 .venv/
 db.sqlite3
+
+### Initializr / scratch ###
+HELP.md
+*.bak
+.application.properties.bak

@@ -1,0 +1,91 @@
+name: kissan-voice
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: kv-postgres
+    environment:
+      POSTGRES_DB: kissanvoice
+      POSTGRES_USER: kissan
+      POSTGRES_PASSWORD: kissan
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kissan -d kissanvoice"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: kv-redpanda
+    command:
+      - redpanda
+      - start
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://redpanda:9092,external://localhost:19092
+      - --schema-registry-addr=internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr=redpanda:33145
+      - --advertise-rpc-addr=redpanda:33145
+      - --mode=dev-container
+      - --smp=1
+      - --default-log-level=warn
+    ports:
+      - "19092:19092"   # Kafka API (what the app connects to)
+      - "18081:18081"   # schema registry
+      - "9644:9644"     # admin
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -q 'Healthy:.*true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redpanda-console:
+    image: redpandadata/console:latest
+    container_name: kv-redpanda-console
+    depends_on:
+      - redpanda
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "8085:8080"     # http://localhost:8085 - screenshot this for the README
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: kv-localstack
+    environment:
+      SERVICES: s3
+      DEBUG: "0"
+      AWS_DEFAULT_REGION: eu-central-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh
+
+  wiremock:
+    image: wiremock/wiremock:latest
+    container_name: kv-wiremock
+    command: ["--global-response-templating", "--verbose"]
+    ports:
+      - "8081:8080"     # stands in for the CRM
+    volumes:
+      - ./wiremock:/home/wiremock
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: kv-n8n
+    environment:
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: Europe/Berlin
+      N8N_HOST: localhost
+      N8N_PORT: "5678"
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8ndata:/home/node/.n8n
+
+volumes:
+  pgdata:
+  n8ndata:
