@@ -1,0 +1,53 @@
+### Java / Maven ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.log
+hs_err_pid*
+
+### IDE ###
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+
+### Spring ###
+application-local.yml
+application-local.properties
+
+### Docker / infra ###
+.env
+.env.local
+infra/localstack/volume/
+infra/n8n/data/
+infra/postgres/data/
+
+### Node (demo client) ###
+node_modules/
+dist/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Legacy Django prototype ###
+# Kept on branch `legacy/django-prototype`; the files may still sit in
+# your working tree but are deliberately not part of this project.
+AgriVoice/
+requirements.txt
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+db.sqlite3
