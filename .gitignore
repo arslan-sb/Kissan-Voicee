@@ -1,15 +1,23 @@
 ### Java / Maven ###
 target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-.mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
+build/
+out/
 *.class
-*.jar
 *.war
-*.log
+*.ear
+*.hprof
 hs_err_pid*
+replay_pid*
+.attach_pid*
+.mvn/timing.properties
+.flattened-pom.xml
+# ignore stray jars, but the Maven wrapper jar (if present) must be committed
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+### Logs ###
+*.log
+logs/
 
 ### IDE ###
 .idea/
@@ -21,28 +29,57 @@ hs_err_pid*
 .project
 .classpath
 bin/
+nbproject/private/
 
-### Spring ###
+### Spring - local overrides may hold real credentials ###
 application-local.yml
 application-local.properties
+application-secrets.*
+
+### Secrets / credentials ###
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.jks
+*.keystore
+.aws/
+credentials
+*_rsa
+*_rsa.pub
 
 ### Docker / infra ###
-.env
-.env.local
-infra/localstack/volume/
-infra/n8n/data/
-infra/postgres/data/
+infra/**/data/
+infra/**/volume/
+infra/n8n/credentials*.json
+
+### Terraform (post-MVP; tfstate can contain secrets) ###
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
 
 ### Node (demo client) ###
 node_modules/
 dist/
+npm-debug.log*
 
 ### OS ###
 .DS_Store
 Thumbs.db
+desktop.ini
+
+### Merge / editor leftovers ###
+*.orig
+*.rej
+*.bak
+*~
 
 ### Legacy Django prototype ###
-# Kept on branch `legacy/django-prototype`; the files may still sit in
+# Preserved on branch `legacy/django-prototype`; the files may still sit in
 # your working tree but are deliberately not part of this project.
 AgriVoice/
 requirements.txt
@@ -52,7 +89,5 @@ venv/
 .venv/
 db.sqlite3
 
-### Initializr / scratch ###
+### Spring Initializr leftovers ###
 HELP.md
-*.bak
-.application.properties.bak
