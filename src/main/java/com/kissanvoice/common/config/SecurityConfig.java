@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/contributors").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/contributors/*/summary").permitAll()
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -50,7 +51,11 @@ public class SecurityConfig {
                                 "/actuator/health",
                                 "/actuator/health/**",
                                 "/actuator/info",
-                                "/actuator/prometheus").permitAll()
+                                "/actuator/prometheus",
+                                // Corpus-wide, not per-contributor - polled by the n8n nightly report
+                                // workflow. Out of MVP scope: a service credential, not the
+                                // contributor bearer model. See ReportsController.
+                                "/api/v1/reports/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.decoder(jwtDecoder())))
                 .build();

@@ -12,6 +12,8 @@ public interface RecordingRepository extends JpaRepository<Recording, UUID> {
 
     long countByContributorIdAndStatus(UUID contributorId, RecordingStatus status);
 
+    long countByStatus(RecordingStatus status);
+
     boolean existsByContributorIdAndQuestionIdAndStatus(UUID contributorId, UUID questionId,
                                                         RecordingStatus status);
 

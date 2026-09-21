@@ -1,0 +1,13 @@
+{
+  "scenarioName": "crm-activity-resilience",
+  "requiredScenarioState": "Failing",
+  "request": {
+    "method": "PATCH",
+    "urlPathPattern": "/crm/v1/contacts/[^/]+/activity"
+  },
+  "response": {
+    "status": 500,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": { "error": "crm_unavailable" }
+  }
+}

@@ -4,6 +4,7 @@ import com.kissanvoice.common.security.CurrentContributor;
 import com.kissanvoice.common.security.TokenService;
 import com.kissanvoice.contributor.ContributorService;
 import com.kissanvoice.contributor.api.dto.ContributorResponse;
+import com.kissanvoice.contributor.api.dto.ContributorSummaryResponse;
 import com.kissanvoice.contributor.api.dto.RegisterContributorRequest;
 import com.kissanvoice.contributor.api.dto.RegistrationResponse;
 import com.kissanvoice.contributor.domain.Contributor;
@@ -71,5 +72,16 @@ public class ContributorController {
     @Operation(summary = "Fetch the authenticated contributor")
     public ContributorResponse me() {
         return ContributorResponse.from(contributors.require(current.id()));
+    }
+
+    @GetMapping("/{id}/summary")
+    @SecurityRequirements
+    @Operation(summary = "Minimal public profile for automation",
+            description = "No phone number, no auth - the enrichment step in Block 6's n8n "
+                    + "\"contributor milestone\" workflow. See SecurityConfig: the self-only GET "
+                    + "above stays fully protected, this is a deliberately narrower endpoint "
+                    + "added alongside it rather than a hole punched through it.")
+    public ContributorSummaryResponse summary(@PathVariable UUID id) {
+        return ContributorSummaryResponse.from(contributors.require(id));
     }
 }

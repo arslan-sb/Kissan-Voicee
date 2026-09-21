@@ -9,12 +9,14 @@ import com.kissanvoice.corpus.domain.Question;
 import com.kissanvoice.media.MediaStoragePort;
 import com.kissanvoice.outbox.AggregateType;
 import com.kissanvoice.outbox.OutboxWriter;
+import com.kissanvoice.outbox.events.ContributorMilestoneReachedData;
 import com.kissanvoice.outbox.events.RecordingCapturedData;
 import com.kissanvoice.outbox.events.RecordingDeletedData;
 import com.kissanvoice.recording.domain.Recording;
 import com.kissanvoice.recording.domain.RecordingSession;
 import com.kissanvoice.recording.domain.RecordingStatus;
 import com.kissanvoice.recording.domain.SessionStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,17 +48,20 @@ public class RecordingService {
     private final CorpusService corpus;
     private final MediaStoragePort media;
     private final OutboxWriter outbox;
+    private final int milestoneThreshold;
 
     public RecordingService(RecordingRepository recordings,
                             RecordingSessionRepository sessions,
                             CorpusService corpus,
                             MediaStoragePort media,
-                            OutboxWriter outbox) {
+                            OutboxWriter outbox,
+                            @Value("${kissanvoice.milestone.threshold:25}") int milestoneThreshold) {
         this.recordings = recordings;
         this.sessions = sessions;
         this.corpus = corpus;
         this.media = media;
         this.outbox = outbox;
+        this.milestoneThreshold = milestoneThreshold;
     }
 
     @Transactional
@@ -118,6 +123,17 @@ public class RecordingService {
         outbox.append(AggregateType.RECORDING, saved.getId(), "RecordingCaptured",
                 new RecordingCapturedData(saved.getId(), contributorId, question.getId(),
                         question.getCategory(), saved.getMediaKey(), durationMs));
+
+        // Fires exactly once, the request that takes the count from
+        // threshold-1 to threshold. A withdrawal that later drops the count
+        // back down and a fresh capture that brings it back up would fire it
+        // again - acceptable for an MVP milestone notification, worth a line
+        // in the README rather than a dedup table for a case this rare.
+        long acceptedCount = recordings.countByContributorIdAndStatus(contributorId, RecordingStatus.ACCEPTED);
+        if (acceptedCount == milestoneThreshold) {
+            outbox.append(AggregateType.MILESTONE, contributorId, "ContributorMilestoneReached",
+                    new ContributorMilestoneReachedData(contributorId, acceptedCount, milestoneThreshold));
+        }
         return saved;
     }
 

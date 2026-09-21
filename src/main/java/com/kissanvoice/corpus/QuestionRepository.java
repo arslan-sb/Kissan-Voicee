@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,4 +50,17 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
     long countUnanswered(@Param("contributorId") UUID contributorId);
 
     long countByActiveTrue();
+
+    /** Per-category totals for the nightly corpus report (Block 6). */
+    @Query(value = """
+            SELECT q.category AS category,
+                   count(q.id) AS "totalQuestions",
+                   count(DISTINCT r.question_id) AS "answeredQuestions"
+            FROM question q
+            LEFT JOIN recording r ON r.question_id = q.id AND r.status = 'ACCEPTED'
+            WHERE q.active
+            GROUP BY q.category
+            ORDER BY q.category
+            """, nativeQuery = true)
+    List<CategoryCoverageRow> coverageByCategory();
 }

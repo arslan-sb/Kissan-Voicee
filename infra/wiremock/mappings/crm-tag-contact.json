@@ -1,0 +1,11 @@
+{
+  "request": {
+    "method": "PATCH",
+    "urlPathPattern": "/crm/v1/contacts/[^/]+/tags"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": { "status": "TAGGED" }
+  }
+}

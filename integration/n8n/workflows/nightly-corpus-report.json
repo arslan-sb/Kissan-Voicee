@@ -1,0 +1,118 @@
+{
+  "name": "Nightly Corpus Report",
+  "active": false,
+  "nodes": [
+    {
+      "id": "6666c14e-a199-464c-a8b1-ab9af730bcf5",
+      "name": "Every Night at 2am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 2,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "1398834d-c6e6-4ac3-b7a4-6414ce170663",
+      "name": "Get Corpus Coverage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:8080/api/v1/reports/corpus-coverage",
+        "authentication": "none",
+        "options": {}
+      }
+    },
+    {
+      "id": "4252a413-9f01-4c98-a110-5875f5f28109",
+      "name": "Format Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const data = $input.first().json;\nconst lines = [];\nlines.push(`Corpus coverage report - ${data.generatedAt}`);\nlines.push(`Overall: ${data.answeredQuestions}/${data.totalQuestions} questions answered (${data.coveragePercent}%)`);\nlines.push(`Contributors: ${data.totalContributors}, accepted recordings: ${data.totalAcceptedRecordings}`);\nlines.push('');\nfor (const cat of data.categories) {\n  lines.push(`- ${cat.category}: ${cat.answeredQuestions}/${cat.totalQuestions} (${cat.coveragePercent}%)`);\n}\nreturn [{ json: { summary: lines.join('\\n'), raw: data } }];"
+      }
+    },
+    {
+      "id": "83b5f6fb-18a8-49db-acd1-185a1ed7925d",
+      "name": "Post Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://wiremock:8080/notifications/nightly-report",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"summary\": $json.summary, \"raw\": $json.raw } }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Every Night at 2am": {
+      "main": [
+        [
+          {
+            "node": "Get Corpus Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Corpus Coverage": {
+      "main": [
+        [
+          {
+            "node": "Format Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Summary": {
+      "main": [
+        [
+          {
+            "node": "Post Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

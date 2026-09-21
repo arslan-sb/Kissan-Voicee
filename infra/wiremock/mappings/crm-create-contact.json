@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/crm/v1/contacts"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "id": "crm-{{randomValue length=10 type='ALPHANUMERIC' uppercase=false}}",
+      "externalId": "{{jsonPath request.body '$.externalId'}}",
+      "status": "SYNCED"
+    }
+  }
+}

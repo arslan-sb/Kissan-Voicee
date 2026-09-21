@@ -40,4 +40,12 @@ public class ContributorService {
         return contributors.findById(id)
                 .orElseThrow(() -> new NotFoundException("Contributor", id));
     }
+
+    /** Called by CrmSyncListener once the CRM confirms the contact exists downstream. */
+    @Transactional
+    public void linkCrmContact(UUID contributorId, String crmContactId) {
+        Contributor contributor = require(contributorId);
+        contributor.setCrmContactId(crmContactId);
+        contributors.save(contributor);
+    }
 }

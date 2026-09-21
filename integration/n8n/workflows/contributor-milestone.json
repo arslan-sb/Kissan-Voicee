@@ -1,0 +1,158 @@
+{
+  "name": "Contributor Milestone",
+  "active": false,
+  "nodes": [
+    {
+      "id": "d116c1ea-6be6-4a98-b0a6-e74dfb84f84e",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "contributor-milestone",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "contributor-milestone",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "10cb3774-2e21-4c6d-a1fb-55207d08476e",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d63f7e2a-1e1a-4e2e-9b1a-0a6e2f9b7a11",
+              "leftValue": "={{ $json.body.contributorId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4052d976-ff53-4139-be67-dfd2546eaf3b",
+      "name": "Enrich Contributor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        220
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=http://host.docker.internal:8080/api/v1/contributors/{{ $json.body.contributorId }}/summary",
+        "authentication": "none",
+        "options": {}
+      }
+    },
+    {
+      "id": "a10a463c-d294-4cd6-bd0f-b9d146a310f7",
+      "name": "Tag Contact In CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        120
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://wiremock:8080/crm/v1/contacts/{{ $('Webhook').item.json.body.contributorId }}/tags",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"tag\": \"milestone-\" + $('Webhook').item.json.body.threshold, \"reason\": \"Reached \" + $('Webhook').item.json.body.recordingCount + \" accepted recordings\" } }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "91a18a11-2f59-4a9d-8763-31ac1063c4f4",
+      "name": "Notify Milestone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://wiremock:8080/notifications/milestone",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"event\": \"contributor_milestone\", \"contributorId\": $('Webhook').item.json.body.contributorId, \"displayName\": $json.displayName, \"recordingCount\": $('Webhook').item.json.body.recordingCount, \"threshold\": $('Webhook').item.json.body.threshold } }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Enrich Contributor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Enrich Contributor": {
+      "main": [
+        [
+          {
+            "node": "Tag Contact In CRM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Milestone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

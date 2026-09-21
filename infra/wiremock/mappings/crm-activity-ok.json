@@ -1,0 +1,13 @@
+{
+  "scenarioName": "crm-activity-resilience",
+  "requiredScenarioState": "Started",
+  "request": {
+    "method": "PATCH",
+    "urlPathPattern": "/crm/v1/contacts/[^/]+/activity"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": { "status": "LOGGED" }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "scenarioName": "crm-activity-resilience",
+  "requiredScenarioState": "RateLimited",
+  "request": {
+    "method": "PATCH",
+    "urlPathPattern": "/crm/v1/contacts/[^/]+/activity"
+  },
+  "response": {
+    "status": 429,
+    "headers": { "Content-Type": "application/json", "Retry-After": "1" },
+    "jsonBody": { "error": "rate_limited" }
+  }
+}

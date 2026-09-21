@@ -88,6 +88,13 @@ services:
       - "5678:5678"
     volumes:
       - n8ndata:/home/node/.n8n
+    extra_hosts:
+      # The API runs on the host (`./mvnw spring-boot:run`), not in this
+      # compose file. host.docker.internal resolves out of the box on Docker
+      # Desktop (Mac/Windows); this line is what makes it also resolve on
+      # Linux, where the same workflows (integration/n8n/workflows/*.json)
+      # otherwise can't reach it.
+      - "host.docker.internal:host-gateway"
 
 volumes:
   pgdata:
