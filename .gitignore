@@ -91,3 +91,6 @@ db.sqlite3
 
 ### Spring Initializr leftovers ###
 HELP.md
+
+### local media adapter scratch ###
+.media/
